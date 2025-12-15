@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Forengers Sapling Identifier 🌱</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f7f2;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 480px;
+      width: 100%;
+      padding: 20px 16px 40px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 16px;
+    }
+    label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 6px;
+    }
+    input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 999px;
+      border: none;
+      background: #2e7d32;
+      color: white;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    button:disabled {
+      background: #a5d6a7;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f1f8e9;
+      font-size: 0.9rem;
+    }
+    .error {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #c62828;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🌱 Forengers Sapling Identifier</h1>
+      <p class="subtitle">Upload a sapling photo and see the result here.</p>
+
+      <label for="photo">Sapling photo (JPEG or PNG)</label>
+      <input type="file" id="photo" accept="image/jpeg,image/png" />
+
+      <button id="identifyBtn">Identify Sapling</button>
+
+      <div id="result" class="result" style="display:none;"></div>
+      <div id="error" class="error" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById("identifyBtn");
+    const resultDiv = document.getElementById("result");
+    const errorDiv = document.getElementById("error");
+    const photoInput = document.getElementById("photo");
+
+    btn.addEventListener("click", async () => {
+      resultDiv.style.display = "none";
+      errorDiv.style.display = "none";
+      resultDiv.innerHTML = "";
+      errorDiv.innerHTML = "";
+
+      const file = photoInput.files[0];
+      if (!file) {
+        errorDiv.textContent = "Please select a photo.";
+        errorDiv.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Identifying...";
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      try {
+        const response = await fetch("http://localhost:4000/api/identify", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          errorDiv.textContent = data.error || "Identification failed.";
+          errorDiv.style.display = "block";
+          return;
+        }
+
+        let html = "<h2>Result</h2>";
+
+        if (data.forengersPlant) {
+          html += `
+            <div><b>Forengers Sapling:</b> ${data.forengersPlant.name}</div>
+            <div><b>Scientific Name:</b> ${data.forengersPlant.scientificName}</div>
+            <div><b>Confidence:</b> ${(data.forengersPlant.matchConfidence * 100).toFixed(1)}%</div>
+          `;
+        } else if (data.apiPlant) {
+          html += `
+            <div><b>Pl@ntNet Plant:</b> ${data.apiPlant.commonName}</div>
+            <div><b>Scientific Name:</b> ${data.apiPlant.scientificName}</div>
+            <div><b>API Confidence:</b> ${(data.apiPlant.confidence * 100).toFixed(1)}%</div>
+          `;
+        } else {
+          html += "<div>No match found.</div>";
+        }
+
+        resultDiv.innerHTML = html;
+        resultDiv.style.display = "block";
+      } catch (err) {
+        errorDiv.textContent = "Could not reach backend.";
+        errorDiv.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Identify Sapling";
+      }
+    });
+  </script>
+</body>
+</html>
