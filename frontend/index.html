@@ -45,7 +45,6 @@
       font-size: 0.9rem;
       border-radius: 8px;
       border: 1px solid #ccc;
-      box-sizing: border-box;
       margin-bottom: 12px;
     }
     button {
@@ -66,7 +65,7 @@
     }
     .result {
       margin-top: 16px;
-      padding: 12px;
+      padding: 14px;
       border-radius: 12px;
       background: #f1f8e9;
       font-size: 0.9rem;
@@ -114,47 +113,44 @@
       }
 
       btn.disabled = true;
-      btn.textContent = "Identifying...";
+      btn.textContent = "Identifying…";
 
       const formData = new FormData();
       formData.append("image", file);
 
       try {
-        const response = await fetch("http://localhost:4000/api/identify", {
+        const response = await fetch("/api/identify", {
           method: "POST",
-          body: formData,
+          body: formData
         });
 
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-          errorDiv.textContent = data.error || "Identification failed.";
-          errorDiv.style.display = "block";
-          return;
+          throw new Error(data.error || "Identification failed");
         }
 
-        let html = "<h2>Result</h2>";
+        let html = `<h3>🌿 Identification Result</h3>`;
 
         if (data.forengersPlant) {
           html += `
-            <div><b>Forengers Sapling:</b> ${data.forengersPlant.name}</div>
-            <div><b>Scientific Name:</b> ${data.forengersPlant.scientificName}</div>
-            <div><b>Confidence:</b> ${(data.forengersPlant.matchConfidence * 100).toFixed(1)}%</div>
+            <p><b>Forengers Sapling:</b> ${data.forengersPlant.name}</p>
+            <p><b>Scientific Name:</b> ${data.forengersPlant.scientificName}</p>
           `;
         } else if (data.apiPlant) {
           html += `
-            <div><b>Pl@ntNet Plant:</b> ${data.apiPlant.commonName}</div>
-            <div><b>Scientific Name:</b> ${data.apiPlant.scientificName}</div>
-            <div><b>API Confidence:</b> ${(data.apiPlant.confidence * 100).toFixed(1)}%</div>
+            <p><b>Plant:</b> ${data.apiPlant.commonName}</p>
+            <p><b>Scientific Name:</b> ${data.apiPlant.scientificName}</p>
           `;
         } else {
-          html += "<div>No match found.</div>";
+          html += `<p>No plant could be identified.</p>`;
         }
 
         resultDiv.innerHTML = html;
         resultDiv.style.display = "block";
+
       } catch (err) {
-        errorDiv.textContent = "Could not reach backend.";
+        errorDiv.textContent = err.message || "Something went wrong.";
         errorDiv.style.display = "block";
       } finally {
         btn.disabled = false;
