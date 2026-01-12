@@ -1,17 +1,16 @@
 const fs = require("fs");
-const path = require("path");
 const csv = require("csv-parser");
 
 /**
  * Load Forengers saplings from CSV into JS array.
  * CSV must have headers: id,common_name,scientific_name,aliases
  */
-function loadSaplingsFromCSV(relativeCsvPath) {
+function loadSaplingsFromCSV(csvPath) {
   return new Promise((resolve, reject) => {
-    const absolutePath = path.join(__dirname, "..", relativeCsvPath);
+    // Use the path exactly as provided - no modifications
     const results = [];
 
-    fs.createReadStream(absolutePath)
+    fs.createReadStream(csvPath)
       .pipe(csv())
       .on("data", (row) => {
         results.push({
